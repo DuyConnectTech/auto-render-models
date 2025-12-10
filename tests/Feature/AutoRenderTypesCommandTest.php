@@ -25,6 +25,9 @@ class AutoRenderTypesCommandTest extends TestCase
         // Config path tạm thời để test output
         config(['models.typescript.path' => __DIR__ . '/../../build/types']);
         config(['models.typescript.filename' => 'test_models.d.ts']);
+        
+        // Disable enums generation to avoid SchemaManager error on SQLite
+        config(['models.enums.enabled' => false]);
     }
 
     protected function tearDown(): void

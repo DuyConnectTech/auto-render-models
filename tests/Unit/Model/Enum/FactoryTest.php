@@ -53,7 +53,7 @@ class FactoryTest extends TestCase
 
         // Mock loading template
         $files->shouldReceive('get')
-            ->with(Mockery::on(fn($path) => str_ends_with($path, 'src/Model/Templates/enum')))
+            ->with(Mockery::on(fn($path) => str_contains($path, 'Templates/enum')))
             ->andReturn("<?php\n\nnamespace {{namespace}};\n\nenum {{enumName}}: string\n{\n{{cases}}\n}\n");
 
         // Assert nội dung file được ghi
