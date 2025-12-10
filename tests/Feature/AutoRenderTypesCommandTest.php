@@ -6,18 +6,28 @@ use Connecttech\AutoRenderModels\Tests\TestCase;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\File;
+use Connecttech\AutoRenderModels\Model\Enum\Factory as EnumFactory;
+use Mockery;
 
 class AutoRenderTypesCommandTest extends TestCase
 {
     protected function setUp(): void
     {
         parent::setUp();
+
+        // Mock EnumFactory to prevent SchemaManager from booting (which fails on SQLite)
+        $enumFactoryMock = Mockery::mock(EnumFactory::class);
+        $enumFactoryMock->shouldReceive('generateEnums')->andReturnNull();
+        
+        // Bind the mock to the container
+        $this->app->instance(EnumFactory::class, $enumFactoryMock);
         
         // Tạo bảng giả để test
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name');
             $table->integer('age')->nullable();
+            // SQLite uses TEXT for JSON, so we test basic type generation
             $table->json('settings')->nullable();
             $table->timestamps();
         });
