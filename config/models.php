@@ -563,9 +563,23 @@ return [
             | Configuration for generating PHP Enum classes from database ENUM columns.
             |
             */
-            'enums' => [
-                'enabled' => true,
-                'path' => app_path('Enums'),
-                'namespace' => 'App\Enums',
-            ],
-    ];
+                    'enums' => [
+                        'enabled' => true,
+                        'path' => app_path('Enums'),
+                        'namespace' => 'App\Enums',
+                    ],
+            
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Factory Generator Configuration
+                    |--------------------------------------------------------------------------
+                    |
+                    | Configuration for generating Eloquent Factories.
+                    |
+                    */
+                    'factories' => [
+                        'enabled' => true,
+                        'path' => database_path('factories'),
+                        'namespace' => 'Database\Factories',
+                    ],
+            ];

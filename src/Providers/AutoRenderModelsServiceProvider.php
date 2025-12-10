@@ -4,6 +4,7 @@ namespace Connecttech\AutoRenderModels\Providers;
 
 use Connecttech\AutoRenderModels\Console\AutoRenderModelsCommand;
 use Connecttech\AutoRenderModels\Console\AutoRenderTypesCommand;
+use Connecttech\AutoRenderModels\Console\AutoRenderFactoryCommand;
 use Connecttech\AutoRenderModels\Model\Config;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\ServiceProvider;
@@ -42,6 +43,7 @@ class AutoRenderModelsServiceProvider extends ServiceProvider
             $this->commands([
                 AutoRenderModelsCommand::class,
                 AutoRenderTypesCommand::class,
+                AutoRenderFactoryCommand::class,
             ]);
         }
     }

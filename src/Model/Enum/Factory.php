@@ -80,18 +80,22 @@ class Factory
             $cases .= "    case {$caseName} = '{$value}';\n";
         }
 
-        $content = <<<PHP
-<?php
+        // Load Template
+        $template = $this->loadTemplate();
 
-namespace {$enumNamespace};
-
-enum {$enumName}: string
-{
-{$cases}
-}
-PHP;
+        $content = str_replace(
+            ['{{namespace}}', '{{enumName}}', '{{cases}}'],
+            [$enumNamespace, $enumName, $cases],
+            $template
+        );
 
         $this->files->put($fullPath, $content);
+    }
+
+    protected function loadTemplate()
+    {
+        $path = __DIR__ . '/../../Templates/enum';
+        return $this->files->get($path);
     }
     
     /**
