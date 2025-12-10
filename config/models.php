@@ -529,4 +529,18 @@ return [
     //            ]
     //        ],
     //    ],
+    /*
+    |--------------------------------------------------------------------------
+    | TypeScript Generator Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Configuration for generating TypeScript interfaces from your database models.
+    |
+    */
+    'typescript' => [
+        'enabled' => true,
+        'path' => resource_path('js/types'),
+        'filename' => 'models.d.ts',
+        'snake_attributes' => true, // Match your DB column names (true) or CamelCase (false)
+    ],
 ];
