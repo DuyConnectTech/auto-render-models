@@ -14,12 +14,6 @@ use Orchestra\Testbench\TestCase;
 
 class FactoryTest extends TestCase
 {
-    protected function tearDown(): void
-    {
-        Mockery::close();
-        parent::tearDown();
-    }
-
     /** @test */
     public function it_generates_enum_classes_from_schema()
     {
