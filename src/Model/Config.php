@@ -58,29 +58,33 @@ class Config
      *
      * @return mixed Giá trị cấu hình tìm được hoặc $default nếu không có.
      */
-    public function get(Blueprint $blueprint, $key, $default = null)
+    public function get(?Blueprint $blueprint, $key, $default = null)
     {
         // Danh sách key cần check theo thứ tự ưu tiên.
         // Càng ở trên càng ưu tiên cao.
-        $priorityKeys = [
-            // Config riêng cho 1 table cụ thể trên 1 connection
-            "@connections.{$blueprint->connection()}.{$blueprint->table()}.$key",
+        $priorityKeys = [];
 
-            // Config riêng cho 1 schema trên 1 connection
-            "@connections.{$blueprint->connection()}.{$blueprint->schema()}.$key",
+        if ($blueprint) {
+            $priorityKeys = [
+                // Config riêng cho 1 table cụ thể trên 1 connection
+                "@connections.{$blueprint->connection()}.{$blueprint->table()}.$key",
 
-            // Config chung cho 1 connection
-            "@connections.{$blueprint->connection()}.$key",
+                // Config riêng cho 1 schema trên 1 connection
+                "@connections.{$blueprint->connection()}.{$blueprint->schema()}.$key",
 
-            // Config cho table (qualified: schema.table)
-            "{$blueprint->qualifiedTable()}.$key",
+                // Config chung cho 1 connection
+                "@connections.{$blueprint->connection()}.$key",
 
-            // Config cho schema
-            "{$blueprint->schema()}.$key",
+                // Config cho table (qualified: schema.table)
+                "{$blueprint->qualifiedTable()}.$key",
 
-            // Config global cho tất cả (*)
-            "*.$key",
-        ];
+                // Config cho schema
+                "{$blueprint->schema()}.$key",
+            ];
+        }
+
+        // Config global cho tất cả (*)
+        $priorityKeys[] = "*.$key";
 
         // Lần lượt duyệt qua các key ưu tiên
         foreach ($priorityKeys as $key) {

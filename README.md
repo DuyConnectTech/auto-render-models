@@ -64,12 +64,23 @@ Chỉ muốn tạo lại model cho bảng `users` thôi thì làm thế này:
 php artisan auto-render:models --table=users
 ```
 
+### 4. Tạo TypeScript Interfaces (New) ⚛️
+Dành cho anh em Fullstack (Next.js/React/Vue). Lệnh này sẽ quét database và tạo file `.d.ts` hoặc `.ts` chứa interface chuẩn type.
+
+```bash
+php artisan auto-render:types
+```
+
+Config output nằm ở `config/models.php` mục `typescript`.
+
 ## Tính năng nổi bật 🔥
 
 *   ✅ **Auto-Detect Relationships:** Tự nhận diện khóa ngoại để build hàm quan hệ.
+*   ✅ **Modern Laravel Style:** Hỗ trợ Laravel 11+ với method `casts(): array` (chỉnh trong config `casts_style`).
+*   ✅ **TypeScript Generator:** Đồng bộ Type giữa Backend và Frontend trong 1 nốt nhạc.
 *   ✅ **Smart Casting:** Tự động cast các cột `*_json` sang array/json.
 *   ✅ **Clean Code:** Code sinh ra sạch đẹp, chuẩn PSR.
-*   ✅ **Base Model Pattern:** Hỗ trợ tách biệt code sinh tự động và code logic custom (nếu bật option `base_files`).
+*   ✅ **Interactive Mode:** Giao diện dòng lệnh tương tác thông minh, không cần nhớ tham số.
 
 ## Đóng góp (Contribution) 🤝
 

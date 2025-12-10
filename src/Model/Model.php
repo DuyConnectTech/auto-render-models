@@ -349,8 +349,13 @@ class Model
 
         $propertyName = $this->usesPropertyConstants() ? 'self::' . strtoupper($column->name) : $column->name;
 
-        // Do vấn đề cast null -> Carbon, field soft delete sẽ được cast về string
-        if ($column->name == $this->getDeletedAtField()) {
+        // Nếu là cột ENUM và Enum generation đang bật
+        if ($this->config('enums.enabled', false) && Str::startsWith($column->type, 'enum')) {
+            $enumClassName = Str::studly(Str::singular($this->blueprint->table())) . Str::studly($column->name);
+            $enumNamespace = $this->config('enums.namespace', 'App\\Enums');
+            $cast = "{$enumNamespace}\\{$enumClassName}::class";
+        } elseif ($column->name == $this->getDeletedAtField()) {
+            // Do vấn đề cast null -> Carbon, field soft delete sẽ được cast về string
             $cast = 'string';
         }
 
@@ -449,23 +454,28 @@ class Model
     {
         $type = $castType;
 
-        switch ($castType) {
-            case 'object':
-                $type = '\stdClass';
-                break;
-            case 'array':
-            case 'json':
-                $type = 'array';
-                break;
-            case 'collection':
-                $type = '\Illuminate\Support\Collection';
-                break;
-            case 'datetime':
-                $type = '\Carbon\Carbon';
-                break;
-            case 'binary':
-                $type = 'string';
-                break;
+        // Nếu castType là một Enum Class (dạng FQN::class)
+        if (Str::endsWith($castType, '::class') && class_exists(Str::before($castType, '::class'))) {
+            $type = Str::before($castType, '::class'); // Lấy FQN của Enum class
+        } else {
+            switch ($castType) {
+                case 'object':
+                    $type = '\stdClass';
+                    break;
+                case 'array':
+                case 'json':
+                    $type = 'array';
+                    break;
+                case 'collection':
+                    $type = '\Illuminate\Support\Collection';
+                    break;
+                case 'datetime':
+                    $type = '\Carbon\Carbon';
+                    break;
+                case 'binary':
+                    $type = 'string';
+                    break;
+            }
         }
 
         if ($nullable) {

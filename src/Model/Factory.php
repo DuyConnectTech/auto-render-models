@@ -8,6 +8,8 @@ use Illuminate\Support\Str;
 use Connecttech\AutoRenderModels\Meta\Blueprint;
 use Connecttech\AutoRenderModels\Meta\SchemaManager;
 use Connecttech\AutoRenderModels\Support\Classify;
+use Connecttech\AutoRenderModels\Support\Dumper;
+use Connecttech\AutoRenderModels\Model\Enum\Factory as EnumFactory;
 
 /**
  * Class Factory
@@ -30,7 +32,7 @@ class Factory
     /**
      * Quản lý schema/tables, được set sau khi gọi on().
      *
-     * @var \Connecttech\AutoRenderModels\Meta\SchemaManager|array
+     * @var \Connecttech\AutoRenderModels\Meta\SchemaManager
      */
     protected $schemas = [];
 
@@ -70,19 +72,34 @@ class Factory
     protected $mutators = [];
 
     /**
+     * Factory để sinh PHP Enums.
+     *
+     * @var \Connecttech\AutoRenderModels\Model\Enum\Factory
+     */
+    protected EnumFactory $enumFactory;
+
+    /**
      * ModelsFactory constructor.
      *
      * @param \Illuminate\Database\DatabaseManager              $db     Quản lý kết nối cơ sở dữ liệu.
      * @param \Illuminate\Filesystem\Filesystem                 $files  Đối tượng filesystem để thao tác file.
      * @param \Connecttech\AutoRenderModels\Support\Classify    $writer Helper sinh code (annotations, fields, methods...).
      * @param \Connecttech\AutoRenderModels\Model\Config        $config Cấu hình sinh model.
+     * @param \Connecttech\AutoRenderModels\Model\Enum\Factory  $enumFactory Factory để sinh Enum classes.
      */
-    public function __construct(DatabaseManager $db, Filesystem $files, Classify $writer, Config $config)
+    public function __construct(
+        DatabaseManager $db,
+        Filesystem $files,
+        Classify $writer,
+        Config $config,
+        EnumFactory $enumFactory
+    )
     {
         $this->db = $db;
         $this->files = $files;
         $this->config = $config;
         $this->class = $writer;
+        $this->enumFactory = $enumFactory;
     }
 
     /**
@@ -142,6 +159,9 @@ class Factory
         }
 
         $mapper = $this->makeSchema($schema);
+
+        // Generate enums for the schema first
+        $this->enumFactory->generateEnums($schema);
 
         foreach ($mapper->tables() as $blueprint) {
             // Chỉ tạo model nếu không nằm trong danh sách except
@@ -211,6 +231,9 @@ class Factory
      */
     public function create($schema, $table)
     {
+        // Generate enums for the schema (in case it wasn't done for the whole DB)
+        $this->enumFactory->generateEnums($schema);
+
         $model = $this->makeModel($schema, $table);
         $template = $this->prepareTemplate($model, 'model');
 
@@ -570,7 +593,16 @@ class Factory
         }
 
         if ($model->hasCasts()) {
-            $body .= $this->class->field('casts', $model->getCasts(), ['before' => "\n"]);
+            if ($this->config($model->getBlueprint(), 'casts_style') === 'method') {
+                $castsBody = 'return ' . Dumper::export($model->getCasts()) . ';';
+                $body .= $this->class->method('casts', $castsBody, [
+                    'visibility' => 'protected',
+                    'returnType' => 'array',
+                    'before' => "\n"
+                ]);
+            } else {
+                $body .= $this->class->field('casts', $model->getCasts(), ['before' => "\n"]);
+            }
         }
 
         if ($model->hasHidden() && ($model->doesNotUseBaseFiles() || $model->hiddenInBaseFiles())) {

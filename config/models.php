@@ -271,6 +271,17 @@ return [
 
         /*
         |--------------------------------------------------------------------------
+        | Casts Style
+        |--------------------------------------------------------------------------
+        |
+        | Laravel 11 introduced the `casts()` method instead of the `$casts` property.
+        | Options: 'property' (default, for Laravel 10/11) | 'method' (for Laravel 11+)
+        |
+        */
+        'casts_style' => 'method',
+
+        /*
+        |--------------------------------------------------------------------------
         | Excluded Tables
         |--------------------------------------------------------------------------
         |
@@ -537,10 +548,24 @@ return [
     | Configuration for generating TypeScript interfaces from your database models.
     |
     */
-    'typescript' => [
-        'enabled' => true,
-        'path' => resource_path('js/types'),
-        'filename' => 'models.d.ts',
-        'snake_attributes' => true, // Match your DB column names (true) or CamelCase (false)
-    ],
-];
+            'typescript' => [
+                'enabled' => true,
+                'path' => resource_path('js/types'),
+                'filename' => 'models.d.ts',
+                'snake_attributes' => true, // Match your DB column names (true) or CamelCase (false)
+            ],
+    
+            /*
+            |--------------------------------------------------------------------------
+            | Enum Generator Configuration
+            |--------------------------------------------------------------------------
+            |
+            | Configuration for generating PHP Enum classes from database ENUM columns.
+            |
+            */
+            'enums' => [
+                'enabled' => true,
+                'path' => app_path('Enums'),
+                'namespace' => 'App\Enums',
+            ],
+    ];
