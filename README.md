@@ -71,13 +71,24 @@ Dành cho anh em Fullstack (Next.js/React/Vue). Lệnh này sẽ quét database 
 php artisan auto-render:types
 ```
 
-Config output nằm ở `config/models.php` mục `typescript`.
+Config output nằm ở `config/models.php` mục `typescript`. Rất hữu ích khi làm việc với TypeScript ở Frontend để đảm bảo Type Safety.
+
+### 5. Sinh PHP Enums từ Database (New) 🎯
+Laravel 11+ khuyến khích dùng PHP Enums. Tính năng này sẽ giúp ông tự động sinh các class Enum từ các cột có kiểu `ENUM` trong database của MySQL, sau đó tự động thêm cast vào model.
+
+```bash
+# Sẽ tự động chạy khi bạn dùng lệnh auto-render:models hoặc auto-render:types
+# Hoặc bạn có thể chạy riêng (tuy nhiên chưa có lệnh riêng)
+# (Logic này đã được tích hợp vào auto-render:models và auto-render:types)
+```
+
+Config output nằm ở `config/models.php` mục `enums`.
 
 ## Tính năng nổi bật 🔥
 
 *   ✅ **Auto-Detect Relationships:** Tự nhận diện khóa ngoại để build hàm quan hệ.
-*   ✅ **Modern Laravel Style:** Hỗ trợ Laravel 11+ với method `casts(): array` (chỉnh trong config `casts_style`).
-*   ✅ **TypeScript Generator:** Đồng bộ Type giữa Backend và Frontend trong 1 nốt nhạc.
+*   ✅ **Modern Laravel Style:** Hỗ trợ Laravel 11+ với method `casts(): array` (chỉnh trong config `casts_style`) và **tự động sinh PHP Enums**.
+*   ✅ **TypeScript Generator:** Đồng bộ Type giữa Backend và Frontend trong 1 nốt nhạc **chuẩn Type Safety**.
 *   ✅ **Smart Casting:** Tự động cast các cột `*_json` sang array/json.
 *   ✅ **Clean Code:** Code sinh ra sạch đẹp, chuẩn PSR.
 *   ✅ **Interactive Mode:** Giao diện dòng lệnh tương tác thông minh, không cần nhớ tham số.
