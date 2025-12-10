@@ -5,6 +5,10 @@ namespace Connecttech\AutoRenderModels\Console;
 use Illuminate\Console\Command;
 use Connecttech\AutoRenderModels\Model\Factory;
 use Illuminate\Contracts\Config\Repository;
+use function Laravel\Prompts\select;
+use function Laravel\Prompts\text;
+use function Laravel\Prompts\confirm;
+use function Laravel\Prompts\search;
 
 class AutoRenderModelsCommand extends Command
 {
@@ -54,6 +58,12 @@ class AutoRenderModelsCommand extends Command
      */
     public function handle()
     {
+        // Interactive Mode if no options provided
+        if (!$this->option('table') && !$this->option('schema') && !$this->option('connection')) {
+            $this->runInteractive();
+            return;
+        }
+
         $connection = $this->getConnection();
         $schema = $this->getSchema($connection);
         $table = $this->getTable();
@@ -68,6 +78,60 @@ class AutoRenderModelsCommand extends Command
         else {
             $this->models->on($connection)->map($schema);
             $this->info("Check out your models for $schema");
+        }
+    }
+
+    protected function runInteractive()
+    {
+        $connections = array_keys($this->config->get('database.connections', []));
+
+        if (empty($connections)) {
+            $this->error('No database connections found in config.');
+            return;
+        }
+
+        // 1. Select Connection
+        $connectionName = select(
+            label: 'Which database connection do you want to use?',
+            options: $connections,
+            default: $this->config->get('database.default')
+        );
+
+        $this->input->setOption('connection', $connectionName);
+        $connection = $this->getConnection();
+        $schema = $this->getSchema($connection);
+
+        // 2. Select Mode (All or Single Table)
+        $mode = select(
+            label: 'What do you want to render?',
+            options: [
+                'all' => 'All Tables in Database',
+                'single' => 'A Specific Table',
+            ],
+            default: 'all'
+        );
+
+        if ($mode === 'single') {
+            // 3. Enter Table Name
+            $tableName = text(
+                label: 'Enter the table name:',
+                placeholder: 'e.g. users',
+                required: true,
+                validate: fn (string $value) => match (true) {
+                    strlen($value) < 1 => 'The table name is required.',
+                    default => null,
+                }
+            );
+
+            $this->models->on($connection)->create($schema, $tableName);
+            $this->info("Successfully rendered model for table: $tableName");
+        } else {
+            if (confirm("This will render models for ALL tables in '$schema'. Continue?")) {
+                $this->models->on($connection)->map($schema);
+                $this->info("Successfully rendered all models for schema: $schema");
+            } else {
+                $this->warn('Operation cancelled.');
+            }
         }
     }
 
