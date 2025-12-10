@@ -1,7 +1,7 @@
 {
     "name": "connecttech/auto-render-models",
     "description": "Automatically generate model templates for developers using Laravel framework.",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "type": "library",
     "homepage": "https://connecttech.vn/",
     "require": {
