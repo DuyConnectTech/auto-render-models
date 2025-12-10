@@ -50,7 +50,12 @@ class FactoryTest extends TestCase
         // 4. Expect Filesystem operations
         $files->shouldReceive('exists')->with('/app/Enums/UserStatus.php')->andReturn(false);
         $files->shouldReceive('isDirectory')->with('/app/Enums')->andReturn(true);
-        
+
+        // Mock loading template
+        $files->shouldReceive('get')
+            ->with(Mockery::on(fn($path) => str_ends_with($path, 'src/Model/Templates/enum')))
+            ->andReturn("<?php\n\nnamespace {{namespace}};\n\nenum {{enumName}}: string\n{\n{{cases}}\n}\n");
+
         // Assert nội dung file được ghi
         $files->shouldReceive('put')->with('/app/Enums/UserStatus.php', Mockery::on(function ($content) {
             return str_contains($content, 'enum UserStatus: string') &&

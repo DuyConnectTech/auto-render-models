@@ -9,6 +9,7 @@ use Connecttech\AutoRenderModels\Model\Config;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\ServiceProvider;
 use Connecttech\AutoRenderModels\Model\Factory as ModelFactory;
+use Connecttech\AutoRenderModels\Model\Enum\Factory as EnumFactory;
 use Connecttech\AutoRenderModels\Support\Classify;
 
 class AutoRenderModelsServiceProvider extends ServiceProvider
@@ -60,7 +61,8 @@ class AutoRenderModelsServiceProvider extends ServiceProvider
                 $app->make('db'),
                 $app->make(Filesystem::class),
                 new Classify(),
-                new Config($app->make('config')->get('models'))
+                new Config($app->make('config')->get('models')),
+                $app->make(EnumFactory::class)
             );
         });
     }
