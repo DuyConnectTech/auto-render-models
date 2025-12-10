@@ -25,6 +25,7 @@ class {{className}} extends Factory
     public function definition(): array
     {
         return [
-{{definition}}        ];
+            {{definition}}        
+        ];
     }
 }
