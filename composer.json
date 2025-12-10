@@ -1,0 +1,46 @@
+{
+    "name": "connecttech/auto-render-models",
+    "description": "Automatically generate model templates for developers using Laravel framework.",
+    "version": "1.0.0",
+    "type": "library",
+    "homepage": "https://connecttech.vn/",
+    "require": {
+        "php": "^8.2",
+        "illuminate/support": "^10.0|^11.0|^12.0",
+        "doctrine/dbal": "^3.6|^4.0",
+        "illuminate/database": "^10.0|^11.0|^12.0",
+        "illuminate/contracts": "^10.0|^11.0|^12.0",
+        "illuminate/filesystem": "^10.0|^11.0|^12.0",
+        "illuminate/console": "^10.0|^11.0|^12.0"
+    },
+    "require-dev": {
+        "fakerphp/faker": "^1.23",
+        "mockery/mockery": "^1.6",
+        "phpunit/phpunit": "^10.0|^11.0"
+    },
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Connecttech\\AutoRenderModels\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "devcontainerDuy",
+            "email": "khanhduytran1803@gmail.com"
+        }
+    ],
+    "config": {
+        "sort-packages": true,
+        "optimize-autoloader": true
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Connecttech\\AutoRenderModels\\Providers\\AutoRenderModelsServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
