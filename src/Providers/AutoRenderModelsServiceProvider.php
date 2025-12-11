@@ -56,12 +56,16 @@ class AutoRenderModelsServiceProvider extends ServiceProvider
      */
     protected function registerModelFactory()
     {
+        $this->app->singleton(Config::class, function ($app) {
+            return new Config($app->make('config')->get('models'));
+        });
+
         $this->app->singleton(ModelFactory::class, function ($app) {
             return new ModelFactory(
                 $app->make('db'),
                 $app->make(Filesystem::class),
-                new Classify(),
-                new Config($app->make('config')->get('models')),
+                $app->make(Classify::class),
+                $app->make(Config::class),
                 $app->make(EnumFactory::class)
             );
         });
