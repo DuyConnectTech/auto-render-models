@@ -26,6 +26,13 @@ class AutoRenderModelsServiceProvider extends ServiceProvider
      */
     public function register()
     {
+        // Merge the package configuration so config('models') is always an array
+        // even when the user hasn't published the config file yet.
+        $this->mergeConfigFrom(
+            dirname(__DIR__, 2) . '/config/models.php',
+            'models'
+        );
+
         $this->registerModelFactory();
     }
 
@@ -57,7 +64,11 @@ class AutoRenderModelsServiceProvider extends ServiceProvider
     protected function registerModelFactory()
     {
         $this->app->singleton(Config::class, function ($app) {
-            return new Config($app->make('config')->get('models'));
+            // Ensure we always pass an array to Config to avoid TypeError when
+            // config('models') is missing or not yet published.
+            $modelsConfig = (array) $app->make('config')->get('models', []);
+
+            return new Config($modelsConfig);
         });
 
         $this->app->singleton(ModelFactory::class, function ($app) {
