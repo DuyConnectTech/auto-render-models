@@ -7,8 +7,10 @@ use RuntimeException;
 use IteratorAggregate;
 use Illuminate\Database\MySqlConnection;
 use Illuminate\Database\MariaDbConnection;
+use Illuminate\Database\SQLiteConnection;
 use Illuminate\Database\ConnectionInterface;
 use Connecttech\AutoRenderModels\Meta\MySql\Schema as MySqlSchema;
+use Connecttech\AutoRenderModels\Meta\SQLite\Schema as SQLiteSchema;
 
 /**
  * Class SchemaManager
@@ -47,6 +49,7 @@ class SchemaManager implements IteratorAggregate
     protected static $lookup = [
         MySqlConnection::class   => MySqlSchema::class,
         MariaDbConnection::class => MySqlSchema::class,
+        SQLiteConnection::class  => SQLiteSchema::class,
         // \DoctrineSupport\Connections\MySqlConnection::class => MySqlSchema::class,
         // Staudenmeir\LaravelCte\Connections\MySqlConnection::class => MySqlSchema::class,
     ];
