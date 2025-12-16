@@ -10,6 +10,7 @@ use Connecttech\AutoRenderModels\Meta\SchemaManager;
 use Connecttech\AutoRenderModels\Support\Classify;
 use Connecttech\AutoRenderModels\Support\Dumper;
 use Connecttech\AutoRenderModels\Model\Enum\Factory as EnumFactory;
+use Connecttech\AutoRenderModels\Model\Factory\Generator as FactoryGenerator;
 
 /**
  * Class Factory
@@ -79,6 +80,13 @@ class Factory
     protected EnumFactory $enumFactory;
 
     /**
+     * Generator để sinh Factory files.
+     *
+     * @var \Connecttech\AutoRenderModels\Model\Factory\Generator
+     */
+    protected FactoryGenerator $factoryGenerator;
+
+    /**
      * ModelsFactory constructor.
      *
      * @param \Illuminate\Database\DatabaseManager              $db     Quản lý kết nối cơ sở dữ liệu.
@@ -92,7 +100,8 @@ class Factory
         Filesystem $files,
         Classify $writer,
         Config $config,
-        EnumFactory $enumFactory
+        EnumFactory $enumFactory,
+        FactoryGenerator $factoryGenerator
     )
     {
         $this->db = $db;
@@ -100,6 +109,7 @@ class Factory
         $this->config = $config;
         $this->class = $writer;
         $this->enumFactory = $enumFactory;
+        $this->factoryGenerator = $factoryGenerator;
     }
 
     /**
@@ -250,6 +260,10 @@ class Factory
         // Nếu dùng base files và chưa có user file => tạo user file
         if ($this->needsUserFile($model)) {
             $this->createUserFile($model);
+        }
+
+        if ($this->config->get(null, 'factories', true)) {
+             $this->factoryGenerator->generate($model);
         }
     }
 
@@ -669,13 +683,19 @@ class Factory
 
         // Methods quan hệ
         foreach ($model->getRelations() as $constraint) {
+            $options = [
+                'before' => "\n",
+                'returnType' => $model->definesReturnTypes() ? $constraint->returnType() : null,
+            ];
+            
+            if ($model->definesReturnTypes()) {
+                $options['docblock'] = $constraint->docblock();
+            }
+
             $body .= $this->class->method(
                 $constraint->name(),
                 $constraint->body(),
-                [
-                    'before' => "\n",
-                    'returnType' => $model->definesReturnTypes() ? $constraint->returnType() : null,
-                ]
+                $options
             );
         }
 

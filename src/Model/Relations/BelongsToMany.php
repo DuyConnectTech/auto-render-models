@@ -210,6 +210,16 @@ class BelongsToMany implements Relation
     }
 
     /**
+     * Nội dung Docblock cho method quan hệ.
+     *
+     * @return string
+     */
+    public function docblock()
+    {
+        return '@return ' . $this->returnType() . '<' . $this->reference->getQualifiedUserClassName() . '>';
+    }
+
+    /**
      * Có cần truyền pivot table vào belongsToMany() không.
      *
      * Eloquent default pivot table name:

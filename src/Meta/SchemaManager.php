@@ -8,9 +8,11 @@ use IteratorAggregate;
 use Illuminate\Database\MySqlConnection;
 use Illuminate\Database\MariaDbConnection;
 use Illuminate\Database\SQLiteConnection;
+use Illuminate\Database\PostgresConnection;
 use Illuminate\Database\ConnectionInterface;
 use Connecttech\AutoRenderModels\Meta\MySql\Schema as MySqlSchema;
 use Connecttech\AutoRenderModels\Meta\SQLite\Schema as SQLiteSchema;
+use Connecttech\AutoRenderModels\Meta\Postgres\Schema as PostgresSchema;
 
 /**
  * Class SchemaManager
@@ -47,9 +49,10 @@ class SchemaManager implements IteratorAggregate
      * @var array<string, class-string<\Connecttech\AutoRenderModels\Meta\Schema>>
      */
     protected static $lookup = [
-        MySqlConnection::class   => MySqlSchema::class,
-        MariaDbConnection::class => MySqlSchema::class,
-        SQLiteConnection::class  => SQLiteSchema::class,
+        MySqlConnection::class    => MySqlSchema::class,
+        MariaDbConnection::class  => MySqlSchema::class,
+        SQLiteConnection::class   => SQLiteSchema::class,
+        PostgresConnection::class => PostgresSchema::class,
         // \DoctrineSupport\Connections\MySqlConnection::class => MySqlSchema::class,
         // Staudenmeir\LaravelCte\Connections\MySqlConnection::class => MySqlSchema::class,
     ];

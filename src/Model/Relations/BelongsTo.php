@@ -286,4 +286,14 @@ class BelongsTo implements Relation
     {
         return (bool) $this->parent->getBlueprint()->column($this->foreignKey())->get('nullable');
     }
+
+    /**
+     * Nội dung Docblock cho method quan hệ.
+     *
+     * @return string
+     */
+    public function docblock()
+    {
+        return '@return ' . $this->returnType() . '<' . $this->related->getQualifiedUserClassName() . '>';
+    }
 }

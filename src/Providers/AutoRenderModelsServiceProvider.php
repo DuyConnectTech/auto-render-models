@@ -5,6 +5,7 @@ namespace Connecttech\AutoRenderModels\Providers;
 use Connecttech\AutoRenderModels\Console\AutoRenderModelsCommand;
 use Connecttech\AutoRenderModels\Console\AutoRenderTypesCommand;
 use Connecttech\AutoRenderModels\Console\AutoRenderFactoryCommand;
+use Connecttech\AutoRenderModels\Console\AutoRenderClearCommand;
 use Connecttech\AutoRenderModels\Model\Config;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\ServiceProvider;
@@ -53,6 +54,7 @@ class AutoRenderModelsServiceProvider extends ServiceProvider
                 AutoRenderModelsCommand::class,
                 AutoRenderTypesCommand::class,
                 AutoRenderFactoryCommand::class,
+                AutoRenderClearCommand::class,
             ]);
         }
     }
@@ -78,7 +80,8 @@ class AutoRenderModelsServiceProvider extends ServiceProvider
                 $app->make(Filesystem::class),
                 $app->make(Classify::class),
                 $app->make(Config::class),
-                $app->make(EnumFactory::class)
+                $app->make(EnumFactory::class),
+                $app->make(\Connecttech\AutoRenderModels\Model\Factory\Generator::class)
             );
         });
     }

@@ -2,138 +2,137 @@
 
 namespace Connecttech\AutoRenderModels\Model\Factory;
 
-use Illuminate\Filesystem\Filesystem;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
-use Connecttech\AutoRenderModels\Model\Config;
+use Illuminate\Filesystem\Filesystem;
+use Connecttech\AutoRenderModels\Model\Model;
 
 class Generator
 {
     protected $files;
-    protected $config;
 
-    public function __construct(Filesystem $files, Config $config)
+    public function __construct(Filesystem $files)
     {
         $this->files = $files;
-        $this->config = $config;
     }
 
-    public function generate($connectionName, $tableName)
+    public function generate(Model $model)
     {
-        $columns = DB::connection($connectionName)->getSchemaBuilder()->getColumns($tableName);
-        $modelName = Str::studly(Str::singular($tableName));
+        // Determine path: database/factories/UserFactory.php
+        // We assume typical Laravel structure relative to the project root.
+        // Since we are in a package, we can't easily guess 'app' path without helpers, 
+        // but 'database/factories' is standard.
         
-        // Resolve Model Namespace
-        $modelNamespace = config('models.namespace', 'App\Models');
-        $modelClass = "{$modelNamespace}\\{$modelName}";
-
-        $definition = "";
-
-        foreach ($columns as $column) {
-            $name = $column['name'];
-            
-            // Skip primary key (usually 'id') and timestamps
-            if ($name === 'id' || in_array($name, ['created_at', 'updated_at', 'deleted_at'])) {
-                continue;
-            }
-
-            $fakerLine = $this->guessFaker($name, $column);
-            $definition .= "            '{$name}' => {$fakerLine},
-";
-        }
-
-        $factoryNamespace = config('models.factories.namespace', 'Database\Factories');
-        $factoryPath = config('models.factories.path', database_path('factories'));
-        $className = "{$modelName}Factory";
-
-        // Load Template
-        $template = $this->loadTemplate();
-
-        $content = str_replace(
-            [
-                '{{factoryNamespace}}',
-                '{{modelClass}}',
-                '{{className}}',
-                '{{modelName}}',
-                '{{modelVar}}',
-                '{{definition}}'
-            ],
-            [
-                $factoryNamespace,
-                $modelClass,
-                $className,
-                $modelName,
-                'model',
-                $definition
-            ],
-            $template
-        );
-
-        if (!$this->files->isDirectory($factoryPath)) {
+        $factoryPath = base_path('database/factories');
+        if (!$this->files->exists($factoryPath)) {
             $this->files->makeDirectory($factoryPath, 0755, true);
         }
 
-        $this->files->put("{$factoryPath}/{$className}.php", $content);
-    }
+        $name = $model->getClassName() . 'Factory';
+        $filePath = $factoryPath . DIRECTORY_SEPARATOR . $name . '.php';
 
-    protected function loadTemplate()
-    {
-        $path = __DIR__ . '/../Templates/factory';
-        return $this->files->get($path);
-    }
+        // Do not overwrite existing factories
+        if ($this->files->exists($filePath)) {
+            return;
+        }
 
-    protected function guessFaker($name, $column)
-    {
-        $type = Str::lower($column['type_name']);
+        $body = $this->buildBody($model);
         
-        // 1. Check ENUM types (Integration with our Enum feature)
-        if ($type === 'enum' || Str::startsWith($column['type'] ?? '', 'enum')) {
-            // Try to find the generated Enum class
-            $enumClassName = Str::studly(Str::singular(Str::studly($column['type'] ?? ''))) . Str::studly($name);
-            // Wait, getting table name here is hard without passing it.
-            // Let's use a simpler heuristic or just randomElement if we can't find class.
+        // Load template
+        $template = file_get_contents(__DIR__ . '/../Templates/factory');
+        
+        // Fill template
+        $content = str_replace(
+            ['{{modelNamespace}}', '{{modelClass}}', '{{body}}'],
+            [$model->getNamespace(), $model->getClassName(), $body],
+            $template
+        );
+
+        $this->files->put($filePath, $content);
+    }
+
+    protected function buildBody(Model $model)
+    {
+        $lines = [];
+        $blueprint = $model->getBlueprint();
+
+        foreach ($blueprint->columns() as $column) {
+            // Skip PK, Timestamps, SoftDeletes
+            if ($column->name === $model->getPrimaryKey()) continue;
+            if (in_array($column->name, [
+                $model->getCreatedAtField(), 
+                $model->getUpdatedAtField(), 
+                $model->getDeletedAtField()
+            ])) continue;
+
+            $faker = $this->guessFaker($column->name, $column->type, $column->size ?? null);
             
-            // Better approach: Parse values from 'enum(a,b)' string if available
-            // Note: $column['type'] usually contains full definition like enum('a','b') in MySQL
-            if (isset($column['type']) && preg_match("/enum\((.*)\)/", $column['type'], $matches)) {
-                 $values = str_getcsv($matches[1], ',', "'");
-                 // Export array to string: ['a', 'b']
-                 $arrayStr = "['" . implode("', '", $values) . "']";
-                 return "$this->faker->randomElement({$arrayStr})";
-            }
+            $lines[] = str_repeat(' ', 12) . "'{$column->name}' => {$faker},";
         }
 
-        // 2. Guess by Name
-        if (Str::contains($name, 'email')) return '$this->faker->unique()->safeEmail()';
-        if (Str::contains($name, 'phone')) return '$this->faker->phoneNumber()';
-        if ($name === 'password') return 'bcrypt("password")'; // Default password
-        if (Str::contains($name, 'name') || Str::contains($name, 'title')) return '$this->faker->name()';
-        if (Str::contains($name, 'slug')) return '$this->faker->slug()';
-        if (Str::contains($name, 'url')) return '$this->faker->url()';
-        if (Str::contains($name, 'address')) return '$this->faker->address()';
-        if (Str::contains($name, 'text') || Str::contains($name, 'desc')) return '$this->faker->text()';
-        if (Str::endsWith($name, '_id')) {
-             // Foreign key guess -> User::factory()
-             // Remove _id -> user -> User
-             $relatedModel = Str::studly(Str::beforeLast($name, '_id'));
-             // We assume related model is in same namespace.
-             // Ideally we should import it, but for simplicity let's use FQN or assume simple usage.
-             // return "{$relatedModel}::factory()"; 
-             // To be safe and avoid infinite loops or missing classes, let's just use random digit or create if exists
-             return "$this->faker->randomNumber()"; // Placeholder, can be improved to use Factory
+        return implode("\n", $lines);
+    }
+
+    protected function guessFaker($name, $type, $size)
+    {
+        $nameLower = strtolower($name);
+
+        // 1. Guess by Name
+        if (Str::contains($nameLower, 'email')) return 'fake()->unique()->safeEmail()';
+        if (Str::contains($nameLower, 'password')) return 'static::$password ??= \Illuminate\Support\Facades\Hash::make(\'password\')';
+        if (Str::contains($nameLower, 'phone')) return 'fake()->phoneNumber()';
+        if ($nameLower === 'name' || $nameLower === 'username' || $nameLower === 'fullname') return 'fake()->name()';
+        if ($nameLower === 'first_name') return 'fake()->firstName()';
+        if ($nameLower === 'last_name') return 'fake()->lastName()';
+        if ($nameLower === 'slug') return 'fake()->slug()';
+        if ($nameLower === 'description' || $nameLower === 'content' || $nameLower === 'body') return 'fake()->paragraph()';
+        if ($nameLower === 'address') return 'fake()->address()';
+        if ($nameLower === 'city') return 'fake()->city()';
+        if ($nameLower === 'country') return 'fake()->country()';
+        if ($nameLower === 'image' || $nameLower === 'avatar' || $nameLower === 'photo') return 'fake()->imageUrl()';
+        if ($nameLower === 'url' || $nameLower === 'website' || $nameLower === 'link') return 'fake()->url()';
+        if ($nameLower === 'ip') return 'fake()->ipv4()';
+        if ($nameLower === 'mac') return 'fake()->macAddress()';
+        if ($nameLower === 'uuid') return 'fake()->uuid()';
+        if ($nameLower === 'company') return 'fake()->company()';
+        if ($nameLower === 'title') return 'fake()->sentence()';
+        if (Str::endsWith($nameLower, '_id')) return 'fake()->randomNumber()'; 
+
+        // 2. Guess by Type
+        switch ($type) {
+            case 'string':
+                if (isset($size) && $size > 255) return 'fake()->text()';
+                return 'fake()->word()';
+            case 'int':
+            case 'integer':
+            case 'bigint':
+            case 'smallint':
+            case 'tinyint':
+                return 'fake()->randomNumber()';
+            case 'text':
+            case 'mediumtext':
+            case 'longtext':
+                return 'fake()->text()';
+            case 'bool':
+            case 'boolean':
+                return 'fake()->boolean()';
+            case 'date':
+                return 'fake()->date()';
+            case 'datetime':
+            case 'timestamp':
+                return 'fake()->dateTime()';
+            case 'float':
+            case 'decimal':
+            case 'double':
+            case 'real':
+            case 'money':
+                return 'fake()->randomFloat(2, 0, 10000)';
+            case 'json':
+            case 'jsonb':
+                return '[]';
+            case 'uuid':
+                return 'fake()->uuid()';
         }
 
-        // 3. Guess by Type
-        return match ($type) {
-            'integer', 'int', 'bigint', 'smallint' => '$this->faker->randomNumber()',
-            'decimal', 'float', 'double' => '$this->faker->randomFloat(2, 0, 1000)',
-            'boolean', 'bool', 'tinyint' => '$this->faker->boolean()',
-            'date' => '$this->faker->date()',
-            'datetime', 'timestamp' => '$this->faker->dateTime()',
-            'text', 'longtext' => '$this->faker->text()',
-            'json' => '[]',
-            default => '$this->faker->word()',
-        };
+        return 'null';
     }
 }

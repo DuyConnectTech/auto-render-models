@@ -92,8 +92,12 @@ class Classify
      * Options:
      *  - visibility : public|protected|private (mặc định 'public')
      *  - returnType : kiểu trả về, không có thì bỏ trống (vd: '\Illuminate\Support\Collection')
+     *  - docblock   : nội dung docblock (string hoặc array lines)
      *
      * Output dạng:
+     *  \t/**
+     *  \t * @return string
+     *  \t * /
      *  \tpublic function getName(): string
      *  \t{
      *  \t\treturn $this->name;
@@ -101,7 +105,7 @@ class Classify
      *
      * @param string $name    Tên method.
      * @param string $body    Nội dung thân method (1 dòng, đã là code PHP).
-     * @param array  $options Tuỳ chọn (visibility, returnType).
+     * @param array  $options Tuỳ chọn (visibility, returnType, docblock).
      *
      * @return string
      */
@@ -109,9 +113,22 @@ class Classify
     {
         $visibility = Arr::get($options, 'visibility', 'public');
         $returnType = Arr::get($options, 'returnType', null);
+        $docblock   = Arr::get($options, 'docblock', null);
         $formattedReturnType = $returnType ? ': ' . $returnType : '';
 
-        return "\n\t$visibility function $name()$formattedReturnType\n\t{\n\t\t$body\n\t}\n";
+        $code = "\n";
+
+        if ($docblock) {
+            $code .= "\t/**\n";
+            foreach ((array) $docblock as $line) {
+                $code .= "\t * $line\n";
+            }
+            $code .= "\t */\n";
+        }
+
+        $code .= "\t$visibility function $name()$formattedReturnType\n\t{\n\t\t$body\n\t}\n";
+
+        return $code;
     }
 
     /**

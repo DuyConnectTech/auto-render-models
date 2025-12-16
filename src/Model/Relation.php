@@ -64,4 +64,14 @@ interface Relation
      * @return string
      */
     public function returnType();
+
+    /**
+     * Nội dung Docblock cho method quan hệ.
+     *
+     * Ví dụ:
+     *  - "@return \Illuminate\Database\Eloquent\Relations\HasMany<\App\Models\Post>"
+     *
+     * @return string|null
+     */
+    public function docblock();
 }

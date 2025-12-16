@@ -58,6 +58,12 @@ class AutoRenderTypesCommand extends Command
         $bar->start();
 
         foreach ($tables as $table) {
+            // Fix for SQLite/Postgres returning "schema.table" format
+            if (str_contains($table, '.')) {
+                $parts = explode('.', $table);
+                $table = end($parts);
+            }
+
             // Skip migration table or config excluded tables
             if ($table === 'migrations' || in_array($table, config('models.except', []))) {
                 $bar->advance();

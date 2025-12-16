@@ -204,4 +204,14 @@ abstract class HasOneOrMany implements Relation
     {
         return $this->command->references[0];
     }
+
+    /**
+     * Nội dung Docblock cho method quan hệ.
+     *
+     * @return string
+     */
+    public function docblock()
+    {
+        return '@return ' . $this->returnType() . '<' . $this->related->getQualifiedUserClassName() . '>';
+    }
 }

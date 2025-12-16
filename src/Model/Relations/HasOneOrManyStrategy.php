@@ -101,4 +101,14 @@ class HasOneOrManyStrategy implements Relation
             ? \Illuminate\Database\Eloquent\Relations\HasMany::class
             : \Illuminate\Database\Eloquent\Relations\HasOne::class;
     }
+
+    /**
+     * Proxy sang relation thật: nội dung docblock.
+     *
+     * @return string
+     */
+    public function docblock()
+    {
+        return $this->relation->docblock();
+    }
 }
