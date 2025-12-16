@@ -359,8 +359,14 @@ class Factory
 
         // Parent class (kế thừa từ class nào)
         $parentClass = $model->getParentClass();
-        $dependencies = array_merge($dependencies, $this->shortenAndExtractImportableDependencies($parentClass, $model));
-        $template = str_replace('{{parent}}', $parentClass, $template);
+        
+        if ($model->getTable() === 'users' && $parentClass === '\Illuminate\Foundation\Auth\User') {
+            $template = str_replace('{{parent}}', 'Authenticatable', $template);
+            $dependencies['Illuminate\Foundation\Auth\User as Authenticatable'] = true;
+        } else {
+            $dependencies = array_merge($dependencies, $this->shortenAndExtractImportableDependencies($parentClass, $model));
+            $template = str_replace('{{parent}}', $parentClass, $template);
+        }
 
         // Body class (traits, const, fields, relations,...)
         $body = $this->body($model);
@@ -379,6 +385,7 @@ class Factory
      *
      * - Bỏ qua class trùng với chính UserModel
      * - Bỏ qua class cùng namespace với model
+     * - Nhóm các class cùng namespace
      * - Sort theo alphabet cho gọn
      *
      * @param array $dependencies Danh sách tên class đầy đủ (FQN).
@@ -388,25 +395,54 @@ class Factory
      */
     private function imports($dependencies, Model $model)
     {
-        $imports = [];
+        $groupedImports = [];
         foreach ($dependencies as $dependencyClass) {
+            // Xử lý trường hợp "use FQN as Alias"
+            $alias = null;
+            if (Str::contains($dependencyClass, ' as ')) {
+                list($dependencyClass, $alias) = explode(' as ', $dependencyClass);
+                $dependencyClass = trim($dependencyClass);
+                $alias = trim($alias);
+            }
+
             // Skip khi cùng class với user model (tránh import chính nó)
             if (trim($dependencyClass, "\\") == trim($model->getQualifiedUserClassName(), "\\")) {
                 continue;
             }
 
-            // Không import các class cùng namespace
-            $inCurrentNamespacePattern = str_replace('\\', '\\\\', "/{$model->getBaseNamespace()}\\[a-zA-Z0-9_]*/");
-            if (preg_match($inCurrentNamespacePattern, $dependencyClass)) {
+            // Lấy namespace và class name
+            $lastBackslash = strrpos($dependencyClass, '\\');
+            $namespace = $lastBackslash === false ? '' : substr($dependencyClass, 0, $lastBackslash);
+            $className = $lastBackslash === false ? $dependencyClass : substr($dependencyClass, $lastBackslash + 1);
+
+            // Không import các class cùng namespace với base model hoặc user model
+            if (trim($namespace, '\\') == trim($model->getBaseNamespace(), '\\') ||
+                trim($namespace, '\\') == trim($model->getNamespace(), '\\')) {
                 continue;
             }
-
-            $imports[] = "use {$dependencyClass};";
+            
+            if ($alias) {
+                $groupedImports[$namespace][] = $className . ' as ' . $alias;
+            } else {
+                $groupedImports[$namespace][] = $className;
+            }
         }
 
-        sort($imports);
+        $finalImports = [];
+        foreach ($groupedImports as $namespace => $classes) {
+            sort($classes); // Sắp xếp các class trong cùng namespace
+            if (empty($namespace)) { // Global namespace
+                 foreach ($classes as $class) {
+                     $finalImports[] = "use {$class};";
+                 }
+            } else {
+                $finalImports[] = "use {$namespace}\\" . implode(', ', $classes) . ';';
+            }
+        }
 
-        return implode("\n", $imports);
+        sort($finalImports); // Sắp xếp các dòng use
+
+        return implode("\n", $finalImports);
     }
 
     /**
@@ -510,8 +546,17 @@ class Factory
         $body = '';
 
         // Thêm traits
-        foreach ($model->getTraits() as $trait) {
-            $body .= $this->class->mixin($trait);
+        $traits = $model->getTraits();
+        if (! empty($traits)) {
+            $traitsWithBackslash = array_map(function($trait) {
+                // Đảm bảo trait có \ ở đầu để regex bắt được là FQN
+                return '\\' . ltrim($trait, '\\'); 
+            }, $traits);
+            
+            // Sắp xếp traits cho đẹp
+            sort($traitsWithBackslash);
+            
+            $body .= "\tuse " . implode(', ', $traitsWithBackslash) . ";\n";
         }
 
         $excludedConstants = [];

@@ -257,7 +257,12 @@ class Model
     protected function configure()
     {
         $this->withNamespace($this->config('namespace'));
-        $this->withParentClass($this->config('parent'));
+
+        if ($this->getTable() === 'users') {
+            $this->withParentClass('Illuminate\Foundation\Auth\User');
+        } else {
+            $this->withParentClass($this->config('parent'));
+        }
 
         // Timestamps settings
         $this->withTimestamps($this->config('timestamps.enabled', $this->config('timestamps', true)));
@@ -908,6 +913,13 @@ class Model
 
         if (! is_array($traits)) {
             throw new \RuntimeException('Config use must be an array of valid traits to append to each model.');
+        }
+
+        // Default traits
+        $traits[] = 'Illuminate\Database\Eloquent\Factories\HasFactory';
+
+        if ($this->getTable() === 'users') {
+            $traits[] = 'Illuminate\Notifications\Notifiable';
         }
 
         if ($this->usesSoftDeletes()) {
